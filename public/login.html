@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Login</title>
+<style>
+body { font-family: Arial; display:flex; justify-content:center; align-items:center; height:100vh; background:#ecf0f1; }
+.container { padding:30px; background:white; width:300px; border-radius:8px; box-shadow:0 0 10px #aaa; }
+input { width:100%; padding:10px; margin-bottom:10px; }
+button { padding:10px; width:100%; background:#3498db; color:white; border:none; cursor:pointer; }
+#error { color:red; text-align:center; }
+</style>
+</head>
+<body>
+
+<div class="container">
+<h2>Login</h2>
+<p id="error"></p>
+
+<input id="username" placeholder="Username">
+<input id="password" type="password" placeholder="Password">
+
+<button onclick="login()">Login</button>
+</div>
+
+<script>
+function login() {
+    fetch("/auth/login", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+            username: document.getElementById("username").value,
+            password: document.getElementById("password").value
+        })
+    })
+    .then(r => r.json())
+    .then(res => {
+        if(res.error) document.getElementById("error").innerText = res.error;
+        else window.location.href="dashboard.html";
+    });
+}
+</script>
+
+</body>
+</html>

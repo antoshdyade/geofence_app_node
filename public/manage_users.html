@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Manage Users</title>
+<style>
+body { font-family:Arial; padding:20px; }
+input,button { padding:10px; margin-bottom:10px; }
+table { border-collapse:collapse; width:100%; margin-top:20px; }
+td,th { border:1px solid #333; padding:10px; }
+.delete-btn{ background:#e74c3c; color:white; border:none; padding:8px; cursor:pointer; }
+</style>
+</head>
+<body>
+
+<h2>User Management</h2>
+<button onclick="location.href='dashboard.html'">Back</button>
+
+<script>
+// BLOCK NON-ADMIN
+fetch("/auth/me",{credentials:"same-origin"})
+  .then(r=>r.json())
+  .then(user=>{
+     if(user.role!=="admin"){
+        alert("Access denied");
+        location.href="dashboard.html";
+     }
+});
+</script>
+
+<h3>Add User</h3>
+<input id="username" placeholder="Username">
+<input id="password" placeholder="Password" type="password">
+<button onclick="addUser()">Create</button>
+
+<table id="tbl">
+<tr>
+ <th>ID</th><th>Username</th><th>Role</th><th>Action</th>
+</tr>
+</table>
+
+<script>
+fetch("/users/list",{credentials:"same-origin"})
+.then(r=>r.json())
+.then(data=>{
+  let tbl=document.getElementById("tbl");
+  data.forEach(u=>{
+    tbl.innerHTML += `
+     <tr>
+        <td>${u.id}</td>
+        <td>${u.username}</td>
+        <td>${u.role}</td>
+        <td><button class="delete-btn" onclick="del(${u.id})">Delete</button></td>
+     </tr>`;
+  });
+});
+
+function addUser(){
+   fetch("/users/add",{
+     method:"POST",
+     credentials:"same-origin",
+     headers:{"Content-Type":"application/json"},
+     body:JSON.stringify({
+       username:document.getElementById("username").value,
+       password:document.getElementById("password").value
+     })
+   })
+   .then(r=>r.json())
+   .then(()=>location.reload());
+}
+
+function del(id){
+   fetch("/users/delete/"+id,{
+     method:"DELETE",
+     credentials:"same-origin"
+   })
+   .then(()=>location.reload());
+}
+</script>
+
+</body>
+</html>

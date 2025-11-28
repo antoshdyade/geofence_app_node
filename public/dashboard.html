@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Dashboard</title>
+<link rel="stylesheet"
+ href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet"
+ href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css">
+<style>
+body { margin:0; font-family:Arial; }
+header { background:#2c3e50; color:white; padding:15px; font-size:22px; }
+.top-bar { background:#34495e; padding:10px; display:flex; gap:10px; }
+button { padding:10px; border:none; color:white; cursor:pointer; }
+.green { background:#27ae60; }
+.red { background:#e74c3c; }
+#map { height: 90vh; }
+</style>
+</head>
+<body>
+
+<header>Geofence Dashboard</header>
+
+<div class="top-bar">
+    <button id="addUserBtn" class="green" style="display:none"
+     onclick="location.href='manage_users.html'">Add User</button>
+
+    <button class="red" onclick="logout()">Logout</button>
+</div>
+
+<div id="map"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
+
+<script>
+// SHOW BUTTON ONLY IF ADMIN
+fetch("/auth/me", { credentials:"same-origin" })
+  .then(r => r.json())
+  .then(user => {
+     if (user.role === "admin") {
+        document.getElementById("addUserBtn").style.display = "inline-block";
+     }
+});
+
+// MAP CODE
+let map = L.map('map').setView([20.5,78.9],5);
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
+let drawn = new L.FeatureGroup(); map.addLayer(drawn);
+
+fetch("/geofence/list",{credentials:'same-origin'})
+.then(r=>r.json())
+.then(data=>{
+  data.forEach(f=>{
+     L.geoJSON(JSON.parse(f.polygon_geojson))
+     .addTo(map)
+     .bindPopup(`<b>${f.name}</b>
+     <br><button onclick="deleteFence(${f.id})" class="red">Delete</button>`);
+  });
+});
+
+let drawCtrl = new L.Control.Draw({
+  draw:{polygon:true,rectangle:true},
+  edit:{featureGroup:drawn}
+});
+map.addControl(drawCtrl);
+
+map.on("draw:created", e=>{
+  let layer=e.layer;
+  drawn.addLayer(layer);
+  let name=prompt("Enter name:");
+  let json=layer.toGeoJSON();
+
+  fetch("/geofence/add",{
+     method:"POST",
+     credentials:"same-origin",
+     headers:{"Content-Type":"application/json"},
+     body:JSON.stringify({name,polygon:json})
+  })
+  .then(r=>r.json())
+  .then(()=>location.reload());
+});
+
+function deleteFence(id){
+   fetch("/geofence/delete/"+id,{
+     method:"DELETE",
+     credentials:"same-origin"
+   })
+   .then(()=>location.reload());
+}
+
+function logout(){
+   fetch("/auth/logout",{credentials:"same-origin"})
+   .then(()=>location.href="login.html");
+}
+</script>
+
+</body>
+</html>
