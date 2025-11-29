@@ -1,0 +1,4 @@
+curl -X POST http://localhost:5000/geofence/check ^
+-H "Content-Type: application/json" ^
+-d "{\"lat\":17.674553,\"lng\":75.323723}"
+
